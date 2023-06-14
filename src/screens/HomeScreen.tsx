@@ -1,10 +1,9 @@
-import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import Feather from 'react-native-vector-icons/Feather';
 
-import SummaryScreen from './SummaryScreen';
 import ReportScreen from './ReportScreen';
 import SettingsScreen from './SettingsScreen';
+import SummaryScreen from './SummaryScreen';
 
 interface IconProps {
   size: number;

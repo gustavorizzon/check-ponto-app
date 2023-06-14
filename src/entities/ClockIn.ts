@@ -5,6 +5,11 @@ export enum ClockInType {
   Exit = 'S',
 }
 
+export const ClockInTypeDescription = {
+  [ClockInType.Entry]: 'Entrada',
+  [ClockInType.Exit]: 'Saída',
+};
+
 export class ClockIn {
   #id: string;
 

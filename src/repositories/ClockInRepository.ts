@@ -17,9 +17,21 @@ export class SQLiteClockInRepository implements ClockInRepository {
   }
 
   async insert(entity: ClockIn): Promise<void> {
+    const params = [entity.date, entity.time, entity.type];
+
+    const [response] = await this.client.executeSql(
+      'select * from clock_ins where date = ? and time = ? and type = ?',
+      params,
+    );
+
+    // preventing duplicates
+    if (response.rows.length) {
+      return;
+    }
+
     await this.client.executeSql(
       'insert into clock_ins (date, time, type) values (?, ?, ?)',
-      [entity.date, entity.time, entity.type],
+      params,
     );
   }
 

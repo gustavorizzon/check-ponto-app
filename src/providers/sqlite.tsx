@@ -48,7 +48,11 @@ export function SQLiteProvider({ children }: PropsWithChildren) {
   const clockInRepository = useMemo<ClockInRepository>(() => {
     return db
       ? new SQLiteClockInRepository(db)
-      : { findAll: async () => [], insert: async () => {} };
+      : {
+          findAll: async () => [],
+          insert: async () => {},
+          findLast: async () => [],
+        };
   }, [db]);
 
   return (

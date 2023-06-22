@@ -64,12 +64,11 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   entryMasterView: {
-    marginTop: 16,
+    marginTop: 20,
     paddingLeft: 14,
     borderLeftWidth: 4,
     borderRadius: 4,
     borderLeftColor: '#3498db',
-    backgroundColor: '#eee',
   },
   entryMasterText: { fontSize: 16, fontWeight: 'bold' },
   entryCardView: {
@@ -79,10 +78,18 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
     borderRadius: 4,
     borderLeftWidth: 4,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   entryCardEntry: { borderLeftColor: '#2ecc71' },
   entryCardExit: { borderLeftColor: '#e74c3c' },
   emptyEntries: { marginTop: 8 },
+  entryCardDeleteBtn: {
+    backgroundColor: '#ddd',
+    padding: 8,
+    borderRadius: 10,
+  },
 });
 
 export default function SummaryScreen() {
@@ -111,9 +118,22 @@ export default function SummaryScreen() {
         ? ClockInType.Exit
         : ClockInType.Entry;
 
-    await clockInRepository.insert(new ClockIn(date, time, type));
-    findLast();
-  }, [clockInRepository, findLast, lastEntries]);
+    const clockIn = new ClockIn(date, time, type);
+    const inserted = await clockInRepository.insert(clockIn);
+
+    if (inserted) {
+      setLastEntries(prev => [clockIn, ...prev.slice(0, LAST_LIMIT - 1)]);
+    }
+  }, [clockInRepository, lastEntries]);
+
+  const removeEntry = useCallback(
+    async (clockIn: ClockIn) => {
+      await clockInRepository.delete(clockIn);
+      setLastEntries(prev => prev.filter(ci => ci.id !== clockIn.id));
+      await findLast();
+    },
+    [clockInRepository, findLast],
+  );
 
   useEffect(() => {
     findLast();
@@ -135,7 +155,7 @@ export default function SummaryScreen() {
         lastDate = e.date;
 
         info.push(
-          <View style={styles.entryMasterView}>
+          <View style={styles.entryMasterView} key={e.date}>
             <Text style={styles.entryMasterText}>
               Em {e.date.split('-').reverse().join('/')}
             </Text>
@@ -152,16 +172,23 @@ export default function SummaryScreen() {
               ? styles.entryCardEntry
               : styles.entryCardExit,
           ]}>
-          <Text style={styles.smallText}>
-            {e.type === ClockInType.Entry ? 'Entrada' : 'Saída'} às
-          </Text>
-          <Text style={styles.bigText}>{e.time}</Text>
+          <View>
+            <Text style={styles.smallText}>
+              {e.type === ClockInType.Entry ? 'Entrada' : 'Saída'} às
+            </Text>
+            <Text style={styles.bigText}>{e.time}</Text>
+          </View>
+          <TouchableOpacity
+            onPress={() => removeEntry(e)}
+            style={styles.entryCardDeleteBtn}>
+            <Feather name="trash" color="#c0392b" size={24} />
+          </TouchableOpacity>
         </View>,
       );
     });
 
     return info;
-  }, [lastEntries]);
+  }, [lastEntries, removeEntry]);
 
   return (
     <ScrollView

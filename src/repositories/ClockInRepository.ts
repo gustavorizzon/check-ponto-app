@@ -3,8 +3,9 @@ import { ClockIn } from '../entities/ClockIn';
 
 export interface ClockInRepository {
   findAll(): Promise<ClockIn[]>;
-  insert(entity: ClockIn): Promise<void>;
+  insert(entity: ClockIn): Promise<boolean>;
   findLast(limit?: number): Promise<ClockIn[]>;
+  delete(entity: ClockIn): Promise<void>;
 }
 
 export class SQLiteClockInRepository implements ClockInRepository {
@@ -16,7 +17,7 @@ export class SQLiteClockInRepository implements ClockInRepository {
     return response.rows.raw().map(r => new ClockIn(r.date, r.time, r.type));
   }
 
-  async insert(entity: ClockIn): Promise<void> {
+  async insert(entity: ClockIn): Promise<boolean> {
     const params = [entity.date, entity.time, entity.type];
 
     const [response] = await this.client.executeSql(
@@ -26,13 +27,15 @@ export class SQLiteClockInRepository implements ClockInRepository {
 
     // preventing duplicates
     if (response.rows.length) {
-      return;
+      return false;
     }
 
     await this.client.executeSql(
       'insert into clock_ins (date, time, type) values (?, ?, ?)',
       params,
     );
+
+    return true;
   }
 
   async findLast(limit = 5): Promise<ClockIn[]> {
@@ -41,5 +44,14 @@ export class SQLiteClockInRepository implements ClockInRepository {
     );
 
     return response.rows.raw().map(r => new ClockIn(r.date, r.time, r.type));
+  }
+
+  async delete(entity: ClockIn): Promise<void> {
+    const params = [entity.date, entity.time, entity.type];
+
+    await this.client.executeSql(
+      'delete from clock_ins where date = ? and time = ? and type = ?',
+      params,
+    );
   }
 }

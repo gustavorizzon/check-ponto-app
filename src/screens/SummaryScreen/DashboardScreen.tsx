@@ -1,3 +1,4 @@
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ScrollView,
@@ -8,8 +9,10 @@ import {
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
 import FontAwesome from 'react-native-vector-icons/FontAwesome';
-import { ClockIn, ClockInType } from '../entities/ClockIn';
-import { useDatabase } from '../providers/sqlite';
+import { SummaryScreenStack } from '.';
+import { ClockIn, ClockInType } from '../../entities/ClockIn';
+import { useDatabase } from '../../providers/sqlite';
+import { getDateAndTime } from '../../utils/getDateAndTime';
 
 const LAST_LIMIT = 6;
 
@@ -33,8 +36,9 @@ const styles = StyleSheet.create({
     marginBottom: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
+    gap: 24,
   },
-  button: { padding: 12, borderRadius: 14, width: '49%' },
+  button: { padding: 12, borderRadius: 14, flex: 1 },
   btnDescription: { marginTop: 8 },
   customClockInBtn: {
     backgroundColor: '#eee',
@@ -92,7 +96,9 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function SummaryScreen() {
+type Props = NativeStackScreenProps<SummaryScreenStack, 'SummaryDashboard'>;
+
+export default function DashboardScreen({ navigation }: Props) {
   const [lastEntries, setLastEntries] = useState<ClockIn[]>([]);
   const { clockInRepository } = useDatabase();
 
@@ -103,15 +109,7 @@ export default function SummaryScreen() {
 
   const newEntry = useCallback(async () => {
     const now = new Date();
-
-    const fullYear = now.getFullYear().toString().padStart(4, '0');
-    const fullMonth = String(now.getMonth() + 1).padStart(2, '0');
-    const fullDay = String(now.getDate()).padStart(2, '0');
-    const date = `${fullYear}-${fullMonth}-${fullDay}`;
-
-    const hours = now.getHours().toString().padStart(2, '0');
-    const minutes = now.getMinutes().toString().padStart(2, '0');
-    const time = `${hours}:${minutes}`;
+    const { date, time } = getDateAndTime(now);
 
     const type =
       lastEntries[0]?.type === ClockInType.Entry
@@ -136,8 +134,14 @@ export default function SummaryScreen() {
   );
 
   useEffect(() => {
-    findLast();
-  }, [findLast]);
+    const navFocusListener = navigation.addListener('focus', () => {
+      findLast();
+    });
+
+    return () => {
+      navigation.removeListener('focus', navFocusListener);
+    };
+  }, [navigation, findLast]);
 
   const entriesView = useMemo(() => {
     if (!lastEntries.length) {
@@ -206,7 +210,9 @@ export default function SummaryScreen() {
         </View>
       </View>
       <View style={styles.buttonGroup}>
-        <TouchableOpacity style={[styles.customClockInBtn, styles.button]}>
+        <TouchableOpacity
+          style={[styles.customClockInBtn, styles.button]}
+          onPress={() => navigation.navigate('SummaryCustomClockInForm')}>
           <Text>
             Marcar{'\n'}
             <Text style={[styles.strong, styles.bigText]}>Horário</Text>

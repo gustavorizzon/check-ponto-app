@@ -23,6 +23,7 @@ export function HomeScreen() {
         options={{
           title: 'Resumo',
           tabBarIcon: WatchIcon,
+          headerShown: false,
         }}
         component={SummaryScreen}
       />
